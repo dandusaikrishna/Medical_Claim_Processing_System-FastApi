@@ -1,4 +1,4 @@
-# 🏥 HealthPay Backend – Claim Document Processor (FastAPI)
+# 🏥 HealthPay – FastAPI Backend for Medical Claim Processing (FastAPI)
 
 This backend system automates the processing of medical insurance claim documents using **FastAPI**, **modular AI agents**, and **asynchronous orchestration**. Designed for high extensibility and maintainability, it simulates real-world AI-enhanced workflows for insurance claim automation.
 
