@@ -1,79 +1,110 @@
-    # HealthPay Backend Developer Assignment - Claim Document Processor
+# 🏥 HealthPay Backend – Claim Document Processor (FastAPI)
 
-## Overview
+This backend system automates the processing of medical insurance claim documents using **FastAPI**, **modular AI agents**, and **asynchronous orchestration**. Designed for high extensibility and maintainability, it simulates real-world AI-enhanced workflows for insurance claim automation.
 
-This project implements a simplified backend pipeline to process medical insurance claim documents using AI tools and agent orchestration frameworks. It is built with FastAPI and modular AI agents that classify, extract, process, and validate claim documents.
+## 🚀 FastAPI-Powered Architecture
 
-## Architecture & Logic
+- **Framework:** FastAPI (async-first design for high-performance APIs)
+- **Endpoint:** `/process-claim` – accepts and processes multiple medical PDFs
+- **Schema Models:** Uses Pydantic for strict and clean data modeling
+- **Agent-Oriented Design:** Each document step (classification, extraction, processing, validation) is handled by dedicated agent classes
 
-- **FastAPI Backend:** Provides an async `/process-claim` endpoint accepting multiple PDF files.
-- **Modular AI Agents:** Separate classes handle document classification, text extraction, document-specific processing (e.g., BillAgent, DischargeAgent), and validation.
-- **Agent Orchestration:** The main endpoint orchestrates the agents to process each uploaded document and aggregate results.
-- **Validation & Claim Decision:** Validates presence and consistency of required fields and returns an approval or rejection decision with reasons.
-- **Pydantic Schemas:** Define structured JSON output for documents, validation results, and claim decision.
+## 📄 Endpoint Overview
 
-## AI Tools Usage
+### `POST /process-claim`
 
-- **Cursor.ai:** Used as AI coding assistant for scaffolding, debugging, and architecture decisions.
-- **OpenAI GPT (gpt-4o-mini):** Used for:
-  - Document classification based on filename and content snippet.
-  - Text extraction from document content.
-  - Structured data extraction from text for bills and discharge summaries.
-  - Validation logic is implemented in code but can be extended with LLMs.
+- Accepts multiple PDF files
+- Processes each file via a pipeline of AI-powered agents
+- Returns a unified claim validation decision and structured output
 
-## Prompt Examples
+## ⚙️ Processing Pipeline
 
-### Document Classification Prompt
+1. **PDF Validation**
+   - Ensures all uploaded files are valid PDFs.
+
+2. **Document Classification (Agent)**
+   - Classifies documents (`bill`, `discharge_summary`, `id_card`, or `unknown`) based on filename and content snippet.
+   - Prompt-based classification using GPT-4o-mini.
+
+3. **Text Extraction (Agent)**
+   - Extracts the main text from PDF content (plain text; OCR not implemented).
+
+4. **Document-Specific Parsing (Agents)**
+   - **BillAgent**: Extracts fields like `hospital_name`, `total_amount`, `date_of_service`.
+   - **DischargeAgent**: Extracts `patient_name`, `diagnosis`, `admission_date`, `discharge_date`.
+
+5. **Validation Agent**
+   - Checks presence and consistency of fields.
+   - Returns a `claim_decision`: `approved` or `rejected` with reasons.
+
+## 📦 Modular AI Agent Design
+
+Each processing step is encapsulated as a class-based async agent:
+- `DocumentClassifierAgent`
+- `TextExtractionAgent`
+- `BillAgent`
+- `DischargeAgent`
+- `ValidationAgent`
+
+This design ensures the system is:
+- Scalable (easy to add new document types)
+- Testable (each agent can be unit tested independently)
+- Maintainable (loose coupling of logic)
+
+## 🧠 Example Prompts Used
+
+> These are simplified for LLM interactions (via OpenAI GPT-4o-mini):
+
+### Classification Prompt
+\`\`\`
+Classify this document:
+Filename: discharge.pdf
+Content: [first 500 chars]
+Types: bill, discharge_summary, id_card, unknown
+Return: only the type
+\`\`\`
+
+### Bill Extraction Prompt
+\`\`\`
+Extract: hospital_name, total_amount, date_of_service
+Text: [extracted text]
+Return: JSON
+\`\`\`
+
+### Discharge Summary Prompt
+\`\`\`
+Extract: patient_name, diagnosis, admission_date, discharge_date
+Text: [extracted text]
+Return: JSON
+\`\`\`
+
+
+# Run the FastAPI app
+uvicorn main:app --reload
+\`\`\`
+
+### 🧪 Test the Endpoint
+
+Use Postman or \`curl\` to test:
+
+\`\`\`bash
+curl -X POST http://localhost:8000/process-claim \
+  -F "files=@./bill.pdf" \
+  -F "files=@./discharge.pdf"
+\`\`\`
+
+## 📁 Project Structure
 
 ```
-Classify the following document based on filename and content snippet:
-Filename: bill.pdf
-Content snippet: [first 500 characters of file content]
-Possible types: bill, discharge_summary, id_card, unknown
-Return only the type.
+.
+├── agents/               # Modular AI agent classes
+├── schemas.py            # Pydantic models for API and internal use
+├── utils.py              # File reading, PDF validation helpers
+├── main.py               # FastAPI app with /process-claim route
+├── requirements.txt
+└── README.md
 ```
 
-### Text Extraction Prompt
 
-```
-Extract the main text content from the following document snippet:
-[document content snippet]
-```
-
-### Bill Processing Prompt
-
-```
-Extract the following fields from the medical bill text: hospital_name, total_amount, date_of_service (ISO format). Return as JSON.
-Text:
-[extracted text]
-```
-
-### Discharge Summary Processing Prompt
-
-```
-Extract the following fields from the discharge summary text: patient_name, diagnosis, admission_date (ISO format), discharge_date (ISO format). Return as JSON.
-Text:
-[extracted text]
-```
-
-## Running the Project
-
-1. Create a virtual environment and install dependencies from `requirements.txt`.
-2. Set the environment variable `OPENAI_API_KEY` with your OpenAI API key.
-3. Run the FastAPI app with `uvicorn main:app --reload`.
-4. Use the `/process-claim` endpoint to upload PDF files for processing.
-
-## Bonus
-
-- Dockerfile can be added for containerization.
-- Redis/PostgreSQL or vector store integration can be added for state management or enhanced AI workflows.
-
-## Tradeoffs & Limitations
-
-- Current AI integrations use OpenAI GPT as an example; other LLMs like Claude or Gemini can be integrated similarly.
-- Text extraction assumes content is text-based; OCR integration may be needed for scanned PDFs.
-- Validation logic is basic and can be extended with more complex cross-checks or LLM-based validation.
 
 ---
-
-*This project demonstrates agentic workflows, modular design, and effective use of AI tools in backend development.*
