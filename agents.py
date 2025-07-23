@@ -1,53 +1,16 @@
-from typing import Dict, Any
-
-class BaseAgent:
-    async def classify(self, file_content: bytes, filename: str) -> str:
-        """
-        Classify the document type based on content or filename.
-        """
-        raise NotImplementedError
-
-    async def extract_text(self, file_content: bytes) -> str:
-        """
-        Extract text from the document using an LLM or OCR.
-        """
-        raise NotImplementedError
-
-    async def process(self, text: str) -> Dict[str, Any]:
-        """
-        Process extracted text into structured data.
-        """
-        raise NotImplementedError
-
-    async def validate(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate the structured data for missing or inconsistent information.
-        """
-        raise NotImplementedError
-
 import os
 import openai
 from typing import Dict, Any
+import json
 
 # Set your OpenAI API key as environment variable OPENAI_API_KEY
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class BaseAgent:
     async def classify(self, file_content: bytes, filename: str) -> str:
-        raise NotImplementedError
-
-    async def extract_text(self, file_content: bytes) -> str:
-        raise NotImplementedError
-
-    async def process(self, text: str) -> Dict[str, Any]:
-        raise NotImplementedError
-
-    async def validate(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        raise NotImplementedError
-
-class DocumentClassifierAgent(BaseAgent):
-    async def classify(self, file_content: bytes, filename: str) -> str:
-        # Example: Use OpenAI GPT to classify document type based on filename and content snippet
+        """
+        Classify the document type based on content or filename.
+        """
         prompt = f"Classify the following document based on filename and content snippet:\nFilename: {filename}\nContent snippet: {file_content[:500].decode(errors='ignore')}\nPossible types: bill, discharge_summary, id_card, unknown\nReturn only the type."
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
@@ -60,10 +23,10 @@ class DocumentClassifierAgent(BaseAgent):
             doc_type = "unknown"
         return doc_type
 
-class TextExtractionAgent(BaseAgent):
     async def extract_text(self, file_content: bytes) -> str:
-        # Example: Use OpenAI GPT to extract text from PDF content (assuming text extraction from PDF bytes is done elsewhere)
-        # Here we simulate by sending content snippet to GPT for extraction
+        """
+        Extract text from the document using an LLM or OCR.
+        """
         prompt = f"Extract the main text content from the following document snippet:\n{file_content[:1000].decode(errors='ignore')}"
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
@@ -74,53 +37,50 @@ class TextExtractionAgent(BaseAgent):
         extracted_text = response.choices[0].message.content.strip()
         return extracted_text
 
-class BillAgent(BaseAgent):
     async def process(self, text: str) -> Dict[str, Any]:
-        # Example: Use OpenAI GPT to extract structured data from bill text
-        prompt = f"Extract the following fields from the medical bill text: hospital_name, total_amount, date_of_service (ISO format). Return as JSON.\nText:\n{text}"
-        response = openai.chat.completions.create(
+        """
+        Process extracted text into structured data.
+        """
+        # Extract bill fields
+        bill_prompt = f"Extract the following fields from the medical bill text: hospital_name, total_amount, date_of_service (ISO format). Return as JSON.\nText:\n{text}"
+        bill_response = openai.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": bill_prompt}],
             max_tokens=200,
             temperature=0
         )
-        import json
         try:
-            data = json.loads(response.choices[0].message.content.strip())
+            bill_data = json.loads(bill_response.choices[0].message.content.strip())
+            bill_data["type"] = "bill"
         except Exception:
-            data = {
-                "hospital_name": "Sample Hospital",
-                "total_amount": 1000,
-                "date_of_service": "2024-01-01"
-            }
-        data["type"] = "bill"
-        return data
+            bill_data = {}
 
-class DischargeAgent(BaseAgent):
-    async def process(self, text: str) -> Dict[str, Any]:
-        # Example: Use OpenAI GPT to extract structured data from discharge summary text
-        prompt = f"Extract the following fields from the discharge summary text: patient_name, diagnosis, admission_date (ISO format), discharge_date (ISO format). Return as JSON.\nText:\n{text}"
-        response = openai.chat.completions.create(
+        # Extract discharge summary fields
+        discharge_prompt = f"Extract the following fields from the discharge summary text: patient_name, diagnosis, admission_date (ISO format), discharge_date (ISO format). Return as JSON.\nText:\n{text}"
+        discharge_response = openai.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": discharge_prompt}],
             max_tokens=300,
             temperature=0
         )
-        import json
         try:
-            data = json.loads(response.choices[0].message.content.strip())
+            discharge_data = json.loads(discharge_response.choices[0].message.content.strip())
+            discharge_data["type"] = "discharge_summary"
         except Exception:
-            data = {
-                "patient_name": "John Doe",
-                "diagnosis": "Sample Diagnosis",
-                "admission_date": "2024-01-01",
-                "discharge_date": "2024-01-10"
-            }
-        data["type"] = "discharge_summary"
-        return data
+            discharge_data = {}
 
-class ValidationAgent(BaseAgent):
+        documents = []
+        if bill_data:
+            documents.append(bill_data)
+        if discharge_data:
+            documents.append(discharge_data)
+
+        return {"documents": documents}
+
     async def validate(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate the structured data for missing or inconsistent information.
+        """
         missing_documents = []
         discrepancies = []
 
@@ -130,7 +90,6 @@ class ValidationAgent(BaseAgent):
             "id_card": ["patient_name", "id_number"]
         }
 
-        # Check for missing required fields
         for doc in data.get("documents", []):
             doc_type = doc.get("type")
             if doc_type in required_fields:
@@ -138,7 +97,6 @@ class ValidationAgent(BaseAgent):
                     if field not in doc or not doc[field]:
                         missing_documents.append(f"{doc_type} missing {field}")
 
-        # Additional discrepancy checks (example: date consistency)
         bill_dates = [doc.get("date_of_service") for doc in data.get("documents", []) if doc.get("type") == "bill"]
         discharge_dates = [(doc.get("admission_date"), doc.get("discharge_date")) for doc in data.get("documents", []) if doc.get("type") == "discharge_summary"]
 
