@@ -18,7 +18,7 @@ def test_edge_case_unknown_document_type(mock_validate, mock_discharge_process, 
         "missing_documents": [],
         "discrepancies": [],
         "claim_decision": {
-            "status": "approved",
+            "status": "Approved",
             "reason": "All required documents present and data is consistent"
         }
     }
@@ -50,7 +50,7 @@ def test_edge_case_empty_pdf(mock_validate, mock_discharge_process, mock_bill_pr
         "missing_documents": ["bill missing hospital_name", "bill missing date_of_service"],
         "discrepancies": [],
         "claim_decision": {
-            "status": "rejected",
+            "status": "Rejected",
             "reason": "Missing required fields"
         }
     }
@@ -61,5 +61,5 @@ def test_edge_case_empty_pdf(mock_validate, mock_discharge_process, mock_bill_pr
     response = client.post("/process-claim", files=files)
     assert response.status_code == 200
     json_response = response.json()
-    assert json_response["validation"]["missing_documents"]
+    assert json_response["validation "]["missing_documents"]
     assert json_response["claim_decision"]["status"] == "rejected"
