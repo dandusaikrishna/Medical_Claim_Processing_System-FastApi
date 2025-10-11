@@ -2,6 +2,15 @@
 
 This backend system automates the processing of medical insurance claim documents using **FastAPI**, **modular AI agents**, and **asynchronous orchestration**. Designed for high extensibility and maintainability, it simulates real-world AI-enhanced workflows for insurance claim automation. 
 
+## 🔧 Tech Stack
+- **Backend:** FastAPI, Python (3.10+)  
+- **Async / Worker:** Celery, Redis  
+- **Database:** PostgreSQL  
+- **AI:** OpenAI API (modular agent wrappers)  
+- **Schemas & Validation:** Pydantic  
+- **Auth:** JWT (PyJWT / jose)  
+- **Containerization:** Docker & Docker Compose  
+- **Testing:** Pytest, HTTPX (async tests)
 ## 🚀 FastAPI-Powered Architecture
 
 - **Framework:** FastAPI (async-first design for high-performance APIs)
