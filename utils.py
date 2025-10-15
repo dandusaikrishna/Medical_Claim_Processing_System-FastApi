@@ -3,9 +3,7 @@ from typing import List
 from fastapi import UploadFile
 
 async def read_file_content(file: UploadFile) -> bytes:
-    """
-    Read the content of an uploaded file asynchronously.
-    """
+
     return await file.read()
 
 def save_file_to_disk(file_content: bytes, filename: str, directory: str = "uploads") -> str:
