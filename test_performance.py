@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from main import app
 from io import BytesIO
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock 
 
 client = TestClient(app)
 
@@ -14,7 +14,6 @@ client = TestClient(app)
 @patch("agents.DischargeAgent.process", new_callable=AsyncMock)
 @patch("agents.ValidationAgent.validate", new_callable=AsyncMock)
 def test_concurrent_requests(mock_validate, mock_discharge_process, mock_bill_process, mock_extract_text, mock_classify):
-    # Setup mocks with cycle to avoid StopAsyncIteration
     side_effect_classify = ["bill", "discharge_summary"] * 10
     side_effect_extract = ["Bill text content", "Discharge summary text content"] * 10
     mock_classify.side_effect = side_effect_classify
