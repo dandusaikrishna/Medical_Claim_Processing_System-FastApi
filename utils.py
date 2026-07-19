@@ -8,7 +8,6 @@ async def read_file_content(file: UploadFile) -> bytes:
 
 def save_file_to_disk(file_content: bytes, filename: str, directory: str = "uploads") -> str:
     """
-    Save file content to disk under the specified directory.
     Returns the saved file path.
     """
     import os
