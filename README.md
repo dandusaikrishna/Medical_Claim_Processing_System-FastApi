@@ -22,7 +22,7 @@ This backend system automates the processing of medical insurance claim document
  
 ### `POST /process-claim`
 
-- Accepts multiple PDF files
+- Accepts multiple PDF files.
 - Processes each file via a pipeline of AI-powered agents 
 - Returns a unified claim validation decision and structured output
 
