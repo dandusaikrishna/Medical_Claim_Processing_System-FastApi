@@ -5,7 +5,7 @@ class BillDocument(BaseModel):
     type: Literal["bill"]
     hospital_name: str
     total_amount: float
-    date_of_service: str  # ISO date string
+    date_of_service: str 
 
 class DischargeSummaryDocument(BaseModel):
     type: Literal["discharge_summary"]
